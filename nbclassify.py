@@ -1,6 +1,7 @@
 import re
 import json
 import sys
+
 prior = {}
 cond_truthful = {}
 cond_deceptive = {}
@@ -16,6 +17,8 @@ pred_trust = {}
 pred_senti = {}
 dbg = open('debug.txt', 'w')
 metrics = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+
+
 # true_deceptive = {}
 # true_truthful = {}
 # true_positive = {}
@@ -36,16 +39,18 @@ metrics = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
 
 
 def tokenize(a_review):
-    lst_token = []
-    #re.sub(' +', ' ', a_review)
     tmp = a_review.replace("'", "")
     tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
     tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
     tmp3 = re.sub('\s\s+', ' ', tmp2)
     lst_token = map(str.lower, tmp3.split(' '))
-    count_words(lst_token, test_cnt_all_words)
+    from Stemmer_new import Stemmer
+    a_stemmer = Stemmer()
+    stemmed_token = a_stemmer.stemWords(lst_token)
+    # count_words(stemmed_token, cnt_all_words)
+    count_words(stemmed_token, test_cnt_all_words)
     review_dict = {}
-    for token in lst_token:
+    for token in stemmed_token:
         if token in review_dict:
             review_dict[token] += 1
         else:
@@ -99,10 +104,10 @@ def read_model():
             key = curr_cond[0]
             which_dict = curr_cond[1][:-1]
 
-            if which_dict =='truthful':
-                cond_truthful[key] = float (curr[1])
+            if which_dict == 'truthful':
+                cond_truthful[key] = float(curr[1])
                 continue
-            elif which_dict =='deceptive':
+            elif which_dict == 'deceptive':
                 cond_deceptive[key] = float(curr[1])
                 continue
             elif which_dict == 'positive':
@@ -140,7 +145,7 @@ def classify_sentiment(a_id, a_review):
         return 'positive'
     else:
         return 'negative'
-    # return ''
+        # return ''
 
 
 def classify_trust(a_id, a_review):
@@ -156,7 +161,8 @@ def classify_trust(a_id, a_review):
         return 'truthful'
     else:
         return 'deceptive'
-    # return ''
+        # return ''
+
 
 def read_output_labels():
     op_labels = open('test_data_labels.txt', 'r')
@@ -182,10 +188,30 @@ def read_output_labels():
             # count_words(review[temp[0]], cnt_senti_true)
 
 
+def compute_metric():
+    m_deceptive = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+    m_truthful = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+    m_negative = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+    m_positive = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+
+    for key in test_review.keys():
+        if true_trust[key] == pred_trust[key]:
+            if true_senti[key]:
+                m_truthful['TP'] += 1
+            else:
+                m_deceptive['TP'] += 1
+        else:
+            if true_senti[key]:
+                m_truthful['FN'] += 1
+            else:
+                m_deceptive['FP'] += 1
+
+
 def main():
     nm_test_text = sys.argv[1]
-    global test_review
     # nm_test_text = 'test_data.txt'
+    global test_review
+
     read_model()
     read_test(nm_test_text)
     read_output_labels()
@@ -213,27 +239,6 @@ def main():
     nboutput.close()
 
 
-
-def compute_metric():
-    m_deceptive = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
-    m_truthful = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
-    m_negative = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
-    m_positive = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
-
-    for key in test_review.keys():
-        if true_trust[key] == pred_trust[key]:
-            if true_senti[key]:
-                m_truthful['TP'] += 1
-            else:
-                m_deceptive['TP'] += 1
-        else:
-            if true_senti[key]:
-                m_truthful['FN'] += 1
-            else:
-                m_deceptive['FP'] += 1
-
-
 # python nbclassify.py test_data.txt
 if __name__ == '__main__':
     main()
-

@@ -6,14 +6,23 @@ class PorterStemmer:
             return True
 
     def isConsonant(self, word, i):
+        # print word
+        # print i
         letter = word[i]
         if self.isCons(letter):
-            if letter == 'y' and self.isCons(word[i - 1]):
-                return False
+            if word[0] != 'y':
+                if letter == 'y' and self.isCons(word[i - 1]):
+                    return False
+                else:
+                    return True
             else:
-                return True
-        else:
+                return False
+        elif letter == 'y':
             return False
+        else:
+            return True
+
+
 
     def isVowel(self, word, i):
         return not (self.isConsonant(word, i))
@@ -71,6 +80,7 @@ class PorterStemmer:
 
     # *o
     def cvc(self, word):
+        # print word
         if len(word) >= 3:
             f = -3
             s = -2
@@ -293,3 +303,18 @@ class PorterStemmer:
         word = self.step5a(word)
         word = self.step5b(word)
         return word
+
+    def stem_sentence(self, a_review):
+        stemmed_review = []
+        for a_word in a_review:
+            # print a_word
+            stemmed_review.append(self.stem(a_word))
+
+        return stemmed_review
+
+# def main():
+#     stemmer = PorterStemmer()
+#     print stemmer.stem('yikes')
+#
+# if __name__ == '__main__':
+#     main()

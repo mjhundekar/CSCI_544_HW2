@@ -3,7 +3,8 @@ import random
 import json
 import re
 import sys
-
+# import PorterStemmer
+import Stemmer_new
 review = {}
 sentiment_bool = {True: [], False: []}
 trust_bool = {True: [], False: []}
@@ -47,15 +48,18 @@ def split_test(a_dict, a_size):
     # write.close()
 
 def tokenize(a_review):
-    lst_token = []
-    #re.sub(' +', ' ', a_review)
     tmp = a_review.replace("'", "")
     tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
     tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
     tmp3 = re.sub('\s\s+', ' ', tmp2)
     lst_token = map(str.lower, tmp3.split(' '))
-    count_words(lst_token, cnt_all_words)
-    return lst_token
+    # from PorterStemmer import PorterStemmer
+    # stemmer = PorterStemmer()
+    from Stemmer_new import Stemmer
+    a_stemmer = Stemmer()
+    stemmed_token = a_stemmer.stemWords(lst_token)
+    count_words(stemmed_token, cnt_all_words)
+    return stemmed_token
 
 
 def count_words(text, a_dict):
