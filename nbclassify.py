@@ -9,8 +9,22 @@ cond_negative = {}
 # cond_all = {}
 test_cnt_all_words = {}
 test_review = {}
-true_labels = {}
-pred_labels = {}
+
+true_trust = {}
+true_senti = {}
+pred_trust = {}
+pred_senti = {}
+dbg = open('debug.txt', 'w')
+metrics = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+# true_deceptive = {}
+# true_truthful = {}
+# true_positive = {}
+# true_negative = {}
+#
+# pred_deceptive = {}
+# pred_truthful = {}
+# pred_positive = {}
+# pred_negative = {}
 
 
 # def read_test_remove(fname):
@@ -24,6 +38,7 @@ def tokenize(a_review):
     global test_cnt_all_words
     lst_token = []
     #re.sub(' +', ' ', a_review)
+    # a_review.replace('\'',)
     re.sub('\s\s+', ' ', a_review)
     lst_token = map(str.lower, a_review.split(' '))
     count_words(lst_token, test_cnt_all_words)
@@ -99,10 +114,12 @@ def read_model():
 def compute_probability(a_id, a_review, a_class_dict):
     prob = 0.0
     a_review_dict = test_review[a_id]
+    dbg.write(str(a_review_dict) + '\n')
     for key in a_review_dict.keys():
         cnt_key = a_review_dict[key]
         if key in a_class_dict:
             prob = prob + (cnt_key * a_class_dict[key])
+            # print a_class_dict[key]
         else:
             continue
     return prob
@@ -140,7 +157,27 @@ def classify_trust(a_id, a_review):
     # return ''
 
 def read_output_labels():
+    op_labels = open('test_data_labels.txt', 'r')
+    ln_op_labels = op_labels.readlines()
+    for line in ln_op_labels:
+        temp = line.strip('\n\r').split(' ')
+        if temp[1] == 'deceptive':
+            true_trust[temp[0]] = False
+            # trust_bool[False].append(temp[0])
+            # count_words(review[temp[0]], cnt_trust_false)
+        else:
+            true_trust[temp[0]] = True
+            # trust_bool[True].append(temp[0])
+            # count_words(review[temp[0]], cnt_trust_true)
 
+        if temp[2] == 'negative':
+            true_senti[temp[0]] = False
+            # sentiment_bool[False].append(temp[0])
+            # count_words(review[temp[0]], cnt_senti_false)
+        else:
+            true_senti[temp[0]] = True
+            # sentiment_bool[True].append(temp[0])
+            # count_words(review[temp[0]], cnt_senti_true)
 
 
 def main():
@@ -157,12 +194,41 @@ def main():
         str_trust = classify_trust(key, test_review[key])
         str_sentiment = classify_sentiment(key, test_review[key])
 
+        if str_trust == 'deceptive':
+            pred_trust[key] = False
+        else:
+            pred_trust[key] = True
+
+        if str_sentiment == 'negative':
+            pred_senti[key] = False
+        else:
+            pred_senti[key] = True
         if cnt < len(test_review.keys()):
             nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment + '\n')
         else:
             nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment)
         cnt += 1
     nboutput.close()
+
+
+
+def compute_metric():
+    m_deceptive = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+    m_truthful = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+    m_negative = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+    m_positive = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+
+    for key in test_review.keys():
+        if true_trust[key] == pred_trust[key]:
+            if true_senti[key]:
+                m_truthful['TP'] += 1
+            else:
+                m_deceptive['TP'] += 1
+        else:
+            if true_senti[key]:
+                m_truthful['FN'] += 1
+            else:
+                m_deceptive['FP'] += 1
 
 
 # python nbclassify.py test_data.txt

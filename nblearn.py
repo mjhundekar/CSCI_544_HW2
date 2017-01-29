@@ -49,8 +49,11 @@ def split_test(a_dict, a_size):
 def tokenize(a_review):
     lst_token = []
     #re.sub(' +', ' ', a_review)
-    re.sub('\s\s+', ' ', a_review)
-    lst_token = map(str.lower, a_review.split(' '))
+    tmp = a_review.replace("'", "")
+    tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
+    tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
+    tmp3 = re.sub('\s\s+', ' ', tmp2)
+    lst_token = map(str.lower, tmp3.split(' '))
     count_words(lst_token, cnt_all_words)
     return lst_token
 
@@ -103,8 +106,9 @@ def read_file(nm_train_text, nm_train_label):
                 count_words(review[temp[0]], cnt_senti_true)
         # @to remove
         else:
-            f_test_labels .write(line)
+            f_test_labels.write(line)
         # @to remove
+
 
 def write_conditional(f, given, a_dict):
     total = sum(a_dict.values(), 0.0)
@@ -121,12 +125,12 @@ def write_conditional(f, given, a_dict):
 
 
 def main():
-    nm_train_text = sys.argv[1]
-    nm_train_label = sys.argv[2]
+    # nm_train_text = sys.argv[1]
+    # nm_train_label = sys.argv[2]
     # fl_train_label = open('train-labels.txt','r')
     # fl_train_text = open('train-text.txt','r')
-    # nm_train_label = 'train-labels.txt'
-    # nm_train_text = 'train-text.txt'
+    nm_train_label = 'train-labels.txt'
+    nm_train_text = 'train-text.txt'
     read_file(nm_train_text, nm_train_label)
     model = open('nbmodel.txt','w')
     tot_review = len(review)
