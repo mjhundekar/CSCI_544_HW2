@@ -34,13 +34,15 @@ metrics = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
 #         test_review[key] = tokenize(test_review[key])
 
 
+
 def tokenize(a_review):
-    global test_cnt_all_words
     lst_token = []
     #re.sub(' +', ' ', a_review)
-    # a_review.replace('\'',)
-    re.sub('\s\s+', ' ', a_review)
-    lst_token = map(str.lower, a_review.split(' '))
+    tmp = a_review.replace("'", "")
+    tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
+    tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
+    tmp3 = re.sub('\s\s+', ' ', tmp2)
+    lst_token = map(str.lower, tmp3.split(' '))
     count_words(lst_token, test_cnt_all_words)
     review_dict = {}
     for token in lst_token:

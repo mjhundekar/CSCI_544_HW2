@@ -125,12 +125,13 @@ def write_conditional(f, given, a_dict):
 
 
 def main():
-    # nm_train_text = sys.argv[1]
-    # nm_train_label = sys.argv[2]
+    nm_train_text = sys.argv[1]
+    nm_train_label = sys.argv[2]
+    # nm_train_label = 'train-labels.txt'
+    # nm_train_text = 'train-text.txt'
     # fl_train_label = open('train-labels.txt','r')
     # fl_train_text = open('train-text.txt','r')
-    nm_train_label = 'train-labels.txt'
-    nm_train_text = 'train-text.txt'
+
     read_file(nm_train_text, nm_train_label)
     model = open('nbmodel.txt','w')
     tot_review = len(review)
