@@ -2,6 +2,8 @@ import math
 import random
 import json
 import re
+import sys
+
 review = {}
 sentiment_bool = {True: [], False: []}
 trust_bool = {True: [], False: []}
@@ -18,17 +20,31 @@ cnt_senti_false = {}
 
 
 def split_test(a_dict, a_size):
+    f_test = open('test_data.txt', 'w')
+    # f_test_labels = open('test_data_labels.txt', 'w')
     rand_keys = random.sample(a_dict, a_size)
-    test_data = {}
+    # test_data = {}
+    count = 1
     for key in rand_keys:
         if key in a_dict:
-            test_data[key] = a_dict[key]
+            if count < len(rand_keys):
+                f_test.write(key + ' ' + a_dict[key] + '\n')
+            else:
+                f_test.write(key + ' ' + a_dict[key])
+            # test_data[key] = a_dict[key]
             del a_dict[key]
+            count += 1
         # else:
         #     a_dict[key] = tokenize(a_dict[key])
-    json.dump(test_data, open('test_data.txt', 'w'))
+    # json.dump(test_data, open('test_data.txt', 'w'))
     # d2 = json.load(open("text.txt"))
-
+    # lines = f_test.readlines()
+    f_test.close()
+    # write = open('test_data.txt', 'w')
+    # write.writelines([item for item in lines[:-1]])
+    # item = lines[-1].rstrip()
+    # write.write(item)
+    # write.close()
 
 def tokenize(a_review):
     lst_token = []
@@ -48,7 +64,7 @@ def count_words(text, a_dict):
 
 
 def read_file(nm_train_text, nm_train_label):
-
+    f_test_labels = open('test_data_labels.txt', 'w')
     fl_train_label = open(nm_train_label, 'r')
     fl_train_text = open(nm_train_text, 'r')
     ln_train_text = fl_train_text.readlines()
@@ -57,9 +73,9 @@ def read_file(nm_train_text, nm_train_label):
         temp = line.strip().split(' ', 1)
         # review[temp[0]] = tokenize(temp[1])
         review[temp[0]] = temp[1].strip()
-
+    # @to remove
     split_test(review, int(len(ln_train_text)*0.25))
-
+    # @to remove
     for key in review.keys():
         review[key] = tokenize(review[key])
 
@@ -85,7 +101,10 @@ def read_file(nm_train_text, nm_train_label):
                 sentiment[temp[0]] = True
                 sentiment_bool[True].append(temp[0])
                 count_words(review[temp[0]], cnt_senti_true)
-
+        # @to remove
+        else:
+            f_test_labels .write(line)
+        # @to remove
 
 def write_conditional(f, given, a_dict):
     total = sum(a_dict.values(), 0.0)
@@ -102,12 +121,12 @@ def write_conditional(f, given, a_dict):
 
 
 def main():
-    #    nm_train_text = sys.argv[2]
-    #    nm_train_label = sys.argv[3]
+    nm_train_text = sys.argv[1]
+    nm_train_label = sys.argv[2]
     # fl_train_label = open('train-labels.txt','r')
     # fl_train_text = open('train-text.txt','r')
-    nm_train_label = 'train-labels.txt'
-    nm_train_text = 'train-text.txt'
+    # nm_train_label = 'train-labels.txt'
+    # nm_train_text = 'train-text.txt'
     read_file(nm_train_text, nm_train_label)
     model = open('nbmodel.txt','w')
     tot_review = len(review)
@@ -166,6 +185,9 @@ def main():
 #
 # def tfidf(word, blob, bloblist):
 #     return tf(word, blob) * idf(word, bloblist)
+
+
+# python nblearn.py train-text.txt train-labels.txt
 if __name__ == '__main__':
     #   python hw3cs561s16.py -i sample01.txt
     main()
