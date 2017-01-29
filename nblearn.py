@@ -3,6 +3,7 @@ import random
 import json
 import re
 import sys
+# from decimal import *
 # import PorterStemmer
 import Stemmer_new
 review = {}
@@ -17,7 +18,7 @@ cnt_trust_false = {}
 cnt_senti_true = {}
 cnt_senti_false = {}
 
-# debug = open('debug.txt', 'w')
+debug = open('debug.txt', 'w')
 
 
 def split_test(a_dict, a_size):
@@ -81,7 +82,7 @@ def read_file(nm_train_text, nm_train_label):
         # review[temp[0]] = tokenize(temp[1])
         review[temp[0]] = temp[1].strip()
     # @to remove
-    split_test(review, int(len(ln_train_text)*0.25))
+    # split_test(review, int(len(ln_train_text)*0.25))
     # @to remove
     for key in review.keys():
         review[key] = tokenize(review[key])
@@ -109,22 +110,25 @@ def read_file(nm_train_text, nm_train_label):
                 sentiment_bool[True].append(temp[0])
                 count_words(review[temp[0]], cnt_senti_true)
         # @to remove
-        else:
-            f_test_labels.write(line)
+        # else:
+        #     f_test_labels.write(line)
         # @to remove
 
 
 def write_conditional(f, given, a_dict):
-    total = sum(a_dict.values(), 0.0)
+    total = float(sum(a_dict.values(), 0.0))
+    debug.write('Total = ' + str(total) + '\n')
     alpha = len(a_dict.keys())
-    cond_prob = {k: math.log10(v / total) for k, v in a_dict.iteritems()}
+    # cond_prob = {k: math.log10(v / total) for k, v in a_dict.iteritems()}
     # laplace smoothing
-    # cond_prob = {k: math.log10((v + 1) / (total + alpha)) for k, v in a_dict.iteritems()}
+    cond_prob = {k: math.log10((v + 1) / float(total + alpha)) for k, v in a_dict.iteritems()}
+    # cond_prob = {k: ((v) / (total)) for k, v in a_dict.iteritems()}
     for key in cond_prob:
         # if key is None:
         #     debug.write(str(key), review[key])
         cond_str = key + given + '= '
         f.write(cond_str + str(cond_prob[key]) + '\n')
+        debug.write(cond_str + str(cond_prob[key]) + '\n')
 
 
 
@@ -147,20 +151,32 @@ def main():
     p_positive = math.log10(tot_senti_true / float(tot_review))
     p_negative = math.log10(1 - p_positive)
 
+    # p_true = tot_trust_true / decimal(tot_review)
+    # p_deceptive = 1 - p_true
+    # p_positive = (tot_senti_true / decimal(tot_review))
+    # p_negative = (1 - p_positive)
+
+
     # model.write('P(Truthful)= ' + str(p_true) + '\n')
     # model.write('P(Deceptive)= ' + str(p_deceptive) + '\n')
     # model.write('P(Positive)= ' + str(p_positive) + '\n')
     # model.write('P(Negative)= ' + str(p_negative) + '\n')
 
     model.write('truthful= ' + str(p_true) + '\n')
+
     model.write('deceptive= ' + str(p_deceptive) + '\n')
+
     model.write('positive= ' + str(p_positive) + '\n')
+
     model.write('negative= ' + str(p_negative) + '\n')
 
+    debug.write('Writing truthful\n')
     write_conditional(model, '|truthful', cnt_trust_true)
+    debug.write('Writing deceptive\n')
     write_conditional(model, '|deceptive', cnt_trust_false)
-
+    debug.write('Writing positive\n')
     write_conditional(model, '|positive', cnt_senti_true)
+    debug.write('Writing negative\n')
     write_conditional(model, '|negative', cnt_senti_false)
 
     print '\ncnt_all_words', str(len(cnt_all_words.keys()))

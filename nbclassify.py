@@ -1,7 +1,8 @@
 import re
 import json
 import sys
-
+import math
+# from decimal import *
 prior = {}
 cond_truthful = {}
 cond_deceptive = {}
@@ -15,7 +16,7 @@ true_trust = {}
 true_senti = {}
 pred_trust = {}
 pred_senti = {}
-dbg = open('debug.txt', 'w')
+dbg = open('debug_classify.txt', 'w')
 metrics = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
 
 
@@ -119,13 +120,16 @@ def read_model():
 
 
 def compute_probability(a_id, a_review, a_class_dict):
-    prob = 0.0
+    prob = float(0.0)
+    # prob = 1.0
     a_review_dict = test_review[a_id]
-    dbg.write(str(a_review_dict) + '\n')
+    # dbg.write(str(a_review_dict) + '\n')
     for key in a_review_dict.keys():
-        cnt_key = a_review_dict[key]
+        cnt_key = int(a_review_dict[key])
         if key in a_class_dict:
-            prob = prob + (cnt_key * a_class_dict[key])
+            prob = prob + (cnt_key * float(a_class_dict[key]))
+            dbg.write(a_id + ' ' + key + ' ' + str(cnt_key) + ' ' + str(a_class_dict[key]) + '\n')
+            # prob *= (math.pow(int(a_class_dict[key]), cnt_key))
             # print a_class_dict[key]
         else:
             continue
@@ -137,11 +141,13 @@ def classify_sentiment(a_id, a_review):
     prior_positive = prior['positive']
     rev_cond_positive = compute_probability(a_id, a_review, cond_positive)
     positive_score = prior_positive + rev_cond_positive
+    # positive_score = prior_positive * rev_cond_positive
     # negative
     prior_negative = prior['negative']
     rev_cond_negative = compute_probability(a_id, a_review, cond_negative)
     negative_score = prior_negative + rev_cond_negative
-    if positive_score > negative_score:
+    # negative_score = prior_negative * rev_cond_negative
+    if positive_score >= negative_score:
         return 'positive'
     else:
         return 'negative'
@@ -153,11 +159,13 @@ def classify_trust(a_id, a_review):
     prior_truthful = prior['truthful']
     rev_cond_truthful = compute_probability(a_id, a_review, cond_truthful)
     truthful_score = prior_truthful + rev_cond_truthful
+    # truthful_score = prior_truthful * rev_cond_truthful
     # deceptive
     prior_deceptive = prior['deceptive']
     rev_cond_deceptive = compute_probability(a_id, a_review, cond_deceptive)
     deceptive_score = prior_deceptive + rev_cond_deceptive
-    if truthful_score > deceptive_score:
+    # deceptive_score = prior_deceptive * rev_cond_deceptive
+    if truthful_score >= deceptive_score:
         return 'truthful'
     else:
         return 'deceptive'
@@ -219,7 +227,9 @@ def main():
     nboutput = open('nboutput.txt', 'w')
     cnt = 1
     for key in test_review.keys():
+        dbg.write('TRUST\n')
         str_trust = classify_trust(key, test_review[key])
+        dbg.write('SENTI\n')
         str_sentiment = classify_sentiment(key, test_review[key])
 
         if str_trust == 'deceptive':
