@@ -6,17 +6,18 @@ import sys
 # from decimal import *
 # import PorterStemmer
 import Stemmer_new
-review = {}
+import collections
+review = collections.OrderedDict()
 sentiment_bool = {True: [], False: []}
 trust_bool = {True: [], False: []}
-sentiment = {}
-trust = {}
+sentiment = collections.OrderedDict()
+trust = collections.OrderedDict()
 
-cnt_all_words = {}
-cnt_trust_true = {}
-cnt_trust_false = {}
-cnt_senti_true = {}
-cnt_senti_false = {}
+cnt_all_words = collections.OrderedDict()
+cnt_trust_true = collections.OrderedDict()
+cnt_trust_false = collections.OrderedDict()
+cnt_senti_true = collections.OrderedDict()
+cnt_senti_false = collections.OrderedDict()
 
 debug = open('debug.txt', 'w')
 
@@ -54,12 +55,12 @@ def tokenize(a_review):
     tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
     tmp3 = re.sub('\s\s+', ' ', tmp2)
     lst_token = map(str.lower, tmp3.split(' '))
-    # from PorterStemmer import PorterStemmer
-    # stemmer = PorterStemmer()
     from Stemmer_new import Stemmer
     a_stemmer = Stemmer()
     stemmed_token = a_stemmer.stemWords(lst_token)
     count_words(stemmed_token, cnt_all_words)
+    # count_words(lst_token, cnt_all_words)
+    # return lst_token
     return stemmed_token
 
 

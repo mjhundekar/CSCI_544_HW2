@@ -2,20 +2,25 @@ import re
 import json
 import sys
 import math
-# from decimal import *
-prior = {}
-cond_truthful = {}
-cond_deceptive = {}
-cond_positive = {}
-cond_negative = {}
-# cond_all = {}
-test_cnt_all_words = {}
-test_review = {}
+import collections
 
-true_trust = {}
-true_senti = {}
-pred_trust = {}
-pred_senti = {}
+# from decimal import *
+prior = collections.OrderedDict()
+cond_truthful = collections.OrderedDict()
+cond_deceptive = collections.OrderedDict()
+cond_positive = collections.OrderedDict()
+cond_negative = collections.OrderedDict()
+# cond_all = {}
+test_cnt_all_words = collections.OrderedDict()
+test_review = collections.OrderedDict()
+
+true_trust = collections.OrderedDict()
+true_senti = collections.OrderedDict()
+pred_trust = collections.OrderedDict()
+pred_senti = collections.OrderedDict()
+precision = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
+recall = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
+f1 = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
 dbg = open('debug_classify.txt', 'w')
 metrics = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
 
@@ -48,10 +53,11 @@ def tokenize(a_review):
     from Stemmer_new import Stemmer
     a_stemmer = Stemmer()
     stemmed_token = a_stemmer.stemWords(lst_token)
-    # count_words(stemmed_token, cnt_all_words)
+    #####count_words(lst_token, test_cnt_all_words)
     count_words(stemmed_token, test_cnt_all_words)
-    review_dict = {}
-    for token in stemmed_token:
+    # count_words(lst_token, test_cnt_all_words)
+    review_dict = collections.OrderedDict()
+    for token in lst_token:
         if token in review_dict:
             review_dict[token] += 1
         else:
@@ -122,17 +128,15 @@ def read_model():
 def compute_probability(a_id, a_review, a_class_dict):
     prob = float(0.0)
     # prob = 1.0
-    a_review_dict = test_review[a_id]
+    # a_review_dict = test_review[a_id]
     # dbg.write(str(a_review_dict) + '\n')
-    for key in a_review_dict.keys():
-        cnt_key = int(a_review_dict[key])
+    for key in a_review.keys():
+        cnt_key = int(a_review[key])
         if key in a_class_dict:
             prob = prob + (cnt_key * float(a_class_dict[key]))
             dbg.write(a_id + ' ' + key + ' ' + str(cnt_key) + ' ' + str(a_class_dict[key]) + '\n')
             # prob *= (math.pow(int(a_class_dict[key]), cnt_key))
             # print a_class_dict[key]
-        else:
-            continue
     return prob
 
 
@@ -141,11 +145,13 @@ def classify_sentiment(a_id, a_review):
     prior_positive = prior['positive']
     rev_cond_positive = compute_probability(a_id, a_review, cond_positive)
     positive_score = prior_positive + rev_cond_positive
+    dbg.write('Final POSITIVE PROB = ' + str(positive_score) + '\n')
     # positive_score = prior_positive * rev_cond_positive
     # negative
     prior_negative = prior['negative']
     rev_cond_negative = compute_probability(a_id, a_review, cond_negative)
     negative_score = prior_negative + rev_cond_negative
+    dbg.write('Final NEGATIVE PROB = ' + str(negative_score) + '\n')
     # negative_score = prior_negative * rev_cond_negative
     if positive_score >= negative_score:
         return 'positive'
@@ -159,11 +165,13 @@ def classify_trust(a_id, a_review):
     prior_truthful = prior['truthful']
     rev_cond_truthful = compute_probability(a_id, a_review, cond_truthful)
     truthful_score = prior_truthful + rev_cond_truthful
+    dbg.write('Final TRUTHFUL PROB = ' + str(truthful_score) + '\n')
     # truthful_score = prior_truthful * rev_cond_truthful
     # deceptive
     prior_deceptive = prior['deceptive']
     rev_cond_deceptive = compute_probability(a_id, a_review, cond_deceptive)
     deceptive_score = prior_deceptive + rev_cond_deceptive
+    dbg.write('Final DECEPTIVE PROB = ' + str(deceptive_score) + '\n')
     # deceptive_score = prior_deceptive * rev_cond_deceptive
     if truthful_score >= deceptive_score:
         return 'truthful'
@@ -197,23 +205,63 @@ def read_output_labels():
 
 
 def compute_metric():
-    m_deceptive = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
-    m_truthful = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
-    m_negative = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
-    m_positive = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+    m_deceptive = {'TP': 0.0, 'TN': 0.0, 'FP': 0.0, 'FN': 0.0}
+    m_truthful = {'TP': 0.0, 'TN': 0.0, 'FP': 0.0, 'FN': 0.0}
+    m_negative = {'TP': 0.0, 'TN': 0.0, 'FP': 0.0, 'FN': 0.0}
+    m_positive = {'TP': 0.0, 'TN': 0.0, 'FP': 0.0, 'FN': 0.0}
 
     for key in test_review.keys():
+        # compute for deceptive
         if true_trust[key] == pred_trust[key]:
-            if true_senti[key]:
-                m_truthful['TP'] += 1
-            else:
+            if pred_trust[key] is False:
                 m_deceptive['TP'] += 1
-        else:
-            if true_senti[key]:
-                m_truthful['FN'] += 1
+                m_truthful['TN'] += 1
             else:
-                m_deceptive['FP'] += 1
+                m_deceptive['TN'] += 1
+                m_truthful['TP'] += 1
+        elif true_trust[key] is True and pred_trust[key] is False:
+            m_deceptive['FN'] += 1
+            m_truthful['FN'] += 1
+        else: # true_trust[key] is False and pred_trust[key] is True:
+            m_deceptive['FP'] += 1
+            m_truthful['FP'] += 1
 
+
+        if true_senti[key] == pred_senti[key]:
+            if pred_senti[key] is False:
+                m_negative['TP'] += 1
+                m_positive['TN'] += 1
+            else:
+                m_negative['TN'] += 1
+                m_positive['TP'] += 1
+        elif true_senti[key] is True and pred_senti[key] is False:
+            m_negative['FN'] += 1
+            m_positive['FN'] += 1
+        else: # true_senti[key] is False and pred_senti[key] is True:
+            m_negative['FP'] += 1
+            m_positive['FP'] += 1
+    # precision = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
+    precision['deceptive'] = m_deceptive['TP']/(m_deceptive['TP'] + m_deceptive['FP'])
+    precision['truthful'] = m_truthful['TP'] / (m_truthful['TP'] + m_truthful['FP'])
+    precision['positive'] = m_positive['TP'] / (m_positive['TP'] + m_positive['FP'])
+    precision['negative'] = m_negative['TP'] / (m_negative['TP'] + m_negative['FP'])
+
+    recall['deceptive'] = m_deceptive['TP'] / (m_deceptive['TP'] + m_deceptive['FN'])
+    recall['truthful'] = m_truthful['TP'] / (m_truthful['TP'] + m_truthful['FN'])
+    recall['positive'] = m_positive['TP'] / (m_positive['TP'] + m_positive['FN'])
+    recall['negative'] = m_negative['TP'] / (m_negative['TP'] + m_negative['FN'])
+
+    f1['deceptive'] = 2 * m_deceptive['TP'] / ((2 * m_deceptive['TP']) + m_deceptive['FP'] + m_deceptive['FN'])
+    f1['truthful'] = 2 * m_truthful['TP'] / ((2 * m_truthful['TP']) + m_truthful['FP'] + m_deceptive['FN'])
+    f1['positive'] = 2 * m_positive['TP'] / ((2 * m_positive['TP']) + m_positive['FP'] + m_deceptive['FN'])
+    f1['negative'] = 2 * m_negative['TP'] / ((2 * m_negative['TP']) + m_negative['FP'] + m_deceptive['FN'])
+
+    print '\n\nPRECISION'
+    print precision
+    print '\n\nRECALL'
+    print recall
+    print '\n\nF1'
+    print f1
 
 def main():
     nm_test_text = sys.argv[1]
@@ -222,7 +270,7 @@ def main():
 
     read_model()
     read_test(nm_test_text)
-    read_output_labels()
+    # read_output_labels()
     # read_test_remove(nm_test_text)
     nboutput = open('nboutput.txt', 'w')
     cnt = 1
@@ -247,6 +295,7 @@ def main():
             nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment)
         cnt += 1
     nboutput.close()
+    # compute_metric()
 
 
 # python nbclassify.py test_data.txt
