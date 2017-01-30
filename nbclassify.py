@@ -5,24 +5,42 @@ import math
 import collections
 
 # from decimal import *
-prior = collections.OrderedDict()
-cond_truthful = collections.OrderedDict()
-cond_deceptive = collections.OrderedDict()
-cond_positive = collections.OrderedDict()
-cond_negative = collections.OrderedDict()
+prior = {}
+cond_truthful = {}
+cond_deceptive = {}
+cond_positive = {}
+cond_negative = {}
 # cond_all = {}
-test_cnt_all_words = collections.OrderedDict()
-test_review = collections.OrderedDict()
+test_cnt_all_words = {}
+test_review = {}
 
-true_trust = collections.OrderedDict()
-true_senti = collections.OrderedDict()
-pred_trust = collections.OrderedDict()
-pred_senti = collections.OrderedDict()
+true_trust = {}
+true_senti = {}
+pred_trust = {}
+pred_senti = {}
 precision = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
 recall = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
 f1 = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
 dbg = open('debug_classify.txt', 'w')
 metrics = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
+
+listOfStopWords = ["", "-", "!", ",", ".", ":",
+                   "a", "able", "about", "all", "also", "am", "an", "and", "any", "as", "are", "at",
+                   "be", "but", "by",
+                   "can",
+                   "did", "do"
+                          "etc",
+                   "find", "for", "from",
+                   "get", "go",
+                   "have", "had", "he", "her", "him", "how,"
+                                                      "i", "if", "in", "is", "it", "its",
+                   "me", "my",
+                   "of", "on", "or", "our",
+                   "so",
+                   "than", "that", "the", "their", "there", "these", "they", "things", "this", "to", "too",
+                   "you", "youll", "your",
+                   "us", "up",
+                   "was", "want", "we", "were", "what", "when", "where", "which", "whom", "why", "will", "with", "who"]
 
 
 # true_deceptive = {}
@@ -45,24 +63,26 @@ metrics = {'TP': 0, 'TN': 0, 'FP': 0, 'FN': 0}
 
 
 def tokenize(a_review):
-    tmp = a_review.replace("'", "")
+    tmp0 = a_review.replace("'", "")
+    tmp = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', tmp0))
     tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
     tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
     tmp3 = re.sub('\s\s+', ' ', tmp2)
     lst_token = map(str.lower, tmp3.split(' '))
+    item_list = [e for e in lst_token if e not in listOfStopWords]
     from Stemmer_new import Stemmer
     a_stemmer = Stemmer()
-    stemmed_token = a_stemmer.stemWords(lst_token)
-    #####count_words(lst_token, test_cnt_all_words)
+    stemmed_token = a_stemmer.stemWords(item_list)
     count_words(stemmed_token, test_cnt_all_words)
     # count_words(lst_token, test_cnt_all_words)
-    review_dict = collections.OrderedDict()
-    for token in lst_token:
-        if token in review_dict:
-            review_dict[token] += 1
-        else:
-            review_dict[token] = 1
-    return review_dict
+    # review_dict = collections.OrderedDict()
+    # for token in lst_token:
+    #     if token in review_dict:
+    #         review_dict[token] += 1
+    #     else:
+    #         review_dict[token] = 1
+    # return review_dict
+    return stemmed_token
 
 
 def count_words(text, a_dict):
@@ -114,13 +134,13 @@ def read_model():
             if which_dict == 'truthful':
                 cond_truthful[key] = float(curr[1])
                 continue
-            elif which_dict == 'deceptive':
+            if which_dict == 'deceptive':
                 cond_deceptive[key] = float(curr[1])
                 continue
-            elif which_dict == 'positive':
+            if which_dict == 'positive':
                 cond_positive[key] = float(curr[1])
                 continue
-            elif which_dict == 'negative':
+            if which_dict == 'negative':
                 cond_negative[key] = float(curr[1])
                 continue
 
@@ -130,13 +150,16 @@ def compute_probability(a_id, a_review, a_class_dict):
     # prob = 1.0
     # a_review_dict = test_review[a_id]
     # dbg.write(str(a_review_dict) + '\n')
-    for key in a_review.keys():
-        cnt_key = int(a_review[key])
+    for key in a_review:
+        # cnt_key = int(a_review[key])
         if key in a_class_dict:
-            prob = prob + (cnt_key * float(a_class_dict[key]))
-            dbg.write(a_id + ' ' + key + ' ' + str(cnt_key) + ' ' + str(a_class_dict[key]) + '\n')
+            prob += float(a_class_dict[key])
+            # dbg.write(a_id + ' ' + key + ' ' + str(cnt_key) + ' ' + str(a_class_dict[key]) + '\n')
+            dbg.write(a_id + ' ' + key + ' ' + str(a_class_dict[key]) + '\n')
             # prob *= (math.pow(int(a_class_dict[key]), cnt_key))
             # print a_class_dict[key]
+        else:
+            dbg.write('NOT FOUND ' + key + '\n')
     return prob
 
 

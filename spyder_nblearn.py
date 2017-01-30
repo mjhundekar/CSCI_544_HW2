@@ -42,6 +42,7 @@ debug = open('debug.txt', 'w')
 
 rand_keys = []
 blob_list = {}
+scores = {}
 
 
 def tf(word, blob, k):
@@ -67,14 +68,14 @@ def n_containing(word, bloblist):
 
 
 def idf(word, bloblist):
-    return math.log(len(bloblist) / (1 + n_containing(word, bloblist)))
+    return math.log(len(bloblist) / (1.0 + n_containing(word, bloblist)))
 
 
 # tfidf(word, review[key], review) for word in review[key]}
 # tfidf(word, blob, blob_list)
 
-def tfidf(word, blob, bloblist):
-    return tf(word, blob) * idf(word, bloblist)
+def tfidf(word, blob, bloblist, k):
+    return tf(word, blob, k) * idf(word, bloblist)
 
 
 def split_test(a_dict, a_size):
@@ -100,10 +101,11 @@ def split_test(a_dict, a_size):
 
 def tokenize(a_review):
     tmp0 = a_review.replace("'", "")
-    tmp = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', tmp0))
-    tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
-    tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
-    tmp3 = re.sub('\s\s+', ' ', tmp2)
+    tmp = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', ' ', tmp0))
+    #    tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
+    #    tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
+    #    tmp3 = re.sub('\s\s+', ' ', tmp2)
+    tmp3 = re.sub('\s\s+', ' ', tmp)
     lst_token = map(str.lower, tmp3.split(' '))
     item_list = [e for e in lst_token if e not in listOfStopWords]
     from Stemmer_new import Stemmer
@@ -124,6 +126,7 @@ def count_words(text, a_dict):
 
 
 def read_file(nm_train_text, nm_train_label):
+    global review
     f_test_labels = open('test_data_labels.txt', 'w')
     fl_train_label = open(nm_train_label, 'r')
     fl_train_text = open(nm_train_text, 'r')
@@ -134,7 +137,7 @@ def read_file(nm_train_text, nm_train_label):
         # review[temp[0]] = tokenize(temp[1])
         review[temp[0]] = temp[1].strip()
     # @to remove
-    # split_test(review, int(len(ln_train_text)*0.25))
+    split_test(review, int(len(ln_train_text) * 0.25))
     # @to remove
     for key in review.keys():
         review[key] = tokenize(review[key])
@@ -163,6 +166,7 @@ def read_file(nm_train_text, nm_train_label):
                 trust[temp[0]] = False
                 trust_bool[False].append(temp[0])
                 count_words(review[temp[0]], cnt_trust_false)
+
                 tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
                 b_deceptive += review[temp[0]]
                 deceptive.write(temp[0] + ' ' + tmp_str)
@@ -188,11 +192,10 @@ def read_file(nm_train_text, nm_train_label):
                 tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
                 b_positive += review[temp[0]]
                 positive.write(temp[0] + ' ' + tmp_str)
-
         # @to remove
-        # else:
-        #     f_test_labels.write(line)
-        # @to remove
+        else:
+            f_test_labels.write(line)
+            # @to remove
 
     # tmp_str = ' '.join(map(str, b_deceptive)) + '\n'
     blob_list['deceptive'] = b_deceptive
@@ -202,12 +205,14 @@ def read_file(nm_train_text, nm_train_label):
     blob_list['negative'] = b_negative
     # tmp_str = ' '.join(map(str, b_truthful)) + '\n'
     blob_list['positive'] = b_truthful
-    # for k, blob in blob_list.iteritems():
-    #     scores = {word: tfidf(word, blob, blob_list) for word in blob}
-    #     tf_idf_review[k] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    #     print k
-    #     for word, score in tf_idf_review[k][:3]:
-    #         print("\tWord: {}, TF-IDF: {}".format(word, round(score, 5)))
+    for k, blob in blob_list.iteritems():
+        scores = {word: tfidf(word, blob, blob_list, k) for word in blob}
+
+
+# tf_idf_review[k] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+#         print k
+#         for word, score in tf_idf_review[k][:3]:
+#             print("\tWord: {}, TF-IDF: {}".format(word, round(score, 5)))
 
 
 def write_conditional(f, given, a_dict):
@@ -233,10 +238,10 @@ def write_conditional(f, given, a_dict):
 
 
 def main():
-    nm_train_text = sys.argv[1]
-    nm_train_label = sys.argv[2]
-    # nm_train_label = 'train-labels.txt'
-    # nm_train_text = 'train-text.txt'
+    #    nm_train_text = sys.argv[1]
+    #    nm_train_label = sys.argv[2]
+    nm_train_label = 'train-labels.txt'
+    nm_train_text = 'train-text.txt'
     # fl_train_label = open('train-labels.txt','r')
     # fl_train_text = open('train-text.txt','r')
 
