@@ -73,7 +73,12 @@ def tokenize(a_review):
     from Stemmer_new import Stemmer
     a_stemmer = Stemmer()
     stemmed_token = a_stemmer.stemWords(item_list)
-    count_words(stemmed_token, test_cnt_all_words)
+    # count_words(stemmed_token, test_cnt_all_words)
+    for token in stemmed_token:
+        if token in test_cnt_all_words:
+            test_cnt_all_words[token] += 1
+        else:
+            test_cnt_all_words[token] = 1
     # count_words(lst_token, test_cnt_all_words)
     # review_dict = collections.OrderedDict()
     # for token in lst_token:
@@ -85,12 +90,12 @@ def tokenize(a_review):
     return stemmed_token
 
 
-def count_words(text, a_dict):
-    for token in text:
-        if token in a_dict:
-            a_dict[token] += 1
-        else:
-            a_dict[token] = 1
+# def count_words(text, a_dict):
+#     for token in text:
+#         if token in a_dict:
+#             a_dict[token] += 1
+#         else:
+#             a_dict[token] = 1
 
 
 def read_test(nm_test_text):
@@ -111,19 +116,19 @@ def read_model():
     for line in lines:
         curr = line.strip().split(' ')
         if count == 1:
-            prior['truthful'] = float(curr[1])
+            prior['truthful'] = float(curr[1]) * 1.0
             count += 1
             continue
         if count == 2:
-            prior['deceptive'] = float(curr[1])
+            prior['deceptive'] = float(curr[1]) * 1.0
             count += 1
             continue
         if count == 3:
-            prior['positive'] = float(curr[1])
+            prior['positive'] = float(curr[1]) * 1.0
             count += 1
             continue
         if count == 4:
-            prior['negative'] = float(curr[1])
+            prior['negative'] = float(curr[1]) * 1.0
             count += 1
             continue
         if count > 4:
@@ -132,16 +137,16 @@ def read_model():
             which_dict = curr_cond[1][:-1]
 
             if which_dict == 'truthful':
-                cond_truthful[key] = float(curr[1])
+                cond_truthful[key] = float(curr[1]) * 1.0
                 continue
             if which_dict == 'deceptive':
-                cond_deceptive[key] = float(curr[1])
+                cond_deceptive[key] = float(curr[1]) * 1.0
                 continue
             if which_dict == 'positive':
-                cond_positive[key] = float(curr[1])
+                cond_positive[key] = float(curr[1]) * 1.0
                 continue
             if which_dict == 'negative':
-                cond_negative[key] = float(curr[1])
+                cond_negative[key] = float(curr[1]) * 1.0
                 continue
 
 
@@ -153,7 +158,7 @@ def compute_probability(a_id, a_review, a_class_dict):
     for key in a_review:
         # cnt_key = int(a_review[key])
         if key in a_class_dict:
-            prob += float(a_class_dict[key])
+            prob += (a_class_dict[key] * 1.0)
             # dbg.write(a_id + ' ' + key + ' ' + str(cnt_key) + ' ' + str(a_class_dict[key]) + '\n')
             dbg.write(a_id + ' ' + key + ' ' + str(a_class_dict[key]) + '\n')
             # prob *= (math.pow(int(a_class_dict[key]), cnt_key))

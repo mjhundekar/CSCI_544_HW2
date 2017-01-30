@@ -47,13 +47,13 @@ scores = {}
 
 def tf(word, blob, k):
     if k == 'positive':
-        return cnt_senti_true[word] / len(blob)
+        return cnt_senti_true[word] / (len(blob) * 1.0)
     elif k == 'negative':
-        return cnt_senti_false[word] / len(blob)
+        return cnt_senti_false[word] / (len(blob) * 1.0)
     elif k == 'deceptive':
-        return cnt_trust_false[word] / len(blob)
+        return cnt_trust_false[word] / (len(blob) * 1.0)
     elif k == 'truthful':
-        return cnt_trust_true[word] / len(blob)
+        return cnt_trust_true[word] / (len(blob) * 1.0)
 
 
 def n_containing(word, bloblist):
@@ -102,31 +102,44 @@ def split_test(a_dict, a_size):
 def tokenize(a_review):
     tmp0 = a_review.replace("'", "")
     tmp = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', ' ', tmp0))
-    #    tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
-    #    tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
-    #    tmp3 = re.sub('\s\s+', ' ', tmp2)
-    tmp3 = re.sub('\s\s+', ' ', tmp)
+    tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp)
+    tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
+    tmp3 = re.sub('\s\s+', ' ', tmp2)
+    # tmp3 = re.sub('\s\s+', ' ', tmp)
     lst_token = map(str.lower, tmp3.split(' '))
     item_list = [e for e in lst_token if e not in listOfStopWords]
     from Stemmer_new import Stemmer
     a_stemmer = Stemmer()
     stemmed_token = a_stemmer.stemWords(item_list)
-    count_words(stemmed_token, cnt_all_words)
-    # count_words(lst_token, cnt_all_words)
-    # return lst_token
+    # count_words(stemmed_token, cnt_all_words)
+    for token in stemmed_token:
+        if token in cnt_all_words:
+            cnt_all_words[token] += 1
+        else:
+            cnt_all_words[token] = 1
+
     return stemmed_token
 
 
-def count_words(text, a_dict):
-    for token in text:
-        if token in a_dict:
-            a_dict[token] += 1
-        else:
-            a_dict[token] = 1
+# def count_words(text, a_dict):
+#     for token in text:
+#         if token in a_dict:
+#             a_dict[token] += 1
+#         else:
+#             a_dict[token] = 1
 
 
 def read_file(nm_train_text, nm_train_label):
     global review
+    global scores
+    global sentiment
+    global trust
+    global cnt_all_words
+    global cnt_trust_true
+    global cnt_trust_false
+    global cnt_senti_true
+    global cnt_senti_false
+    global tf_idf_review
     f_test_labels = open('test_data_labels.txt', 'w')
     fl_train_label = open(nm_train_label, 'r')
     fl_train_text = open(nm_train_text, 'r')
@@ -154,10 +167,10 @@ def read_file(nm_train_text, nm_train_label):
     negative = open('negative.txt', 'w')
     deceptive = open('deceptive.txt', 'w')
     truthful = open('truthful.txt', 'w')
-    b_positive = []
-    b_negative = []
-    b_deceptive = []
-    b_truthful = []
+    b_positive = set()
+    b_negative = set()
+    b_deceptive = set()
+    b_truthful = set()
 
     for line in ln_train_label:
         temp = line.strip('\n\r').split(' ')
@@ -165,32 +178,52 @@ def read_file(nm_train_text, nm_train_label):
             if temp[1] == 'deceptive':
                 trust[temp[0]] = False
                 trust_bool[False].append(temp[0])
-                count_words(review[temp[0]], cnt_trust_false)
+                for token in review[temp[0]]:
+                    if token in cnt_trust_false:
+                        cnt_trust_false[token] += 1
+                    else:
+                        cnt_trust_false[token] = 1
+                # count_words(review[temp[0]], cnt_trust_false)
 
                 tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
-                b_deceptive += review[temp[0]]
+                b_deceptive |= set(review[temp[0]])
                 deceptive.write(temp[0] + ' ' + tmp_str)
             elif temp[1] == 'truthful':
                 trust[temp[0]] = True
                 trust_bool[True].append(temp[0])
-                count_words(review[temp[0]], cnt_trust_true)
+                # count_words(review[temp[0]], cnt_trust_true)
+                for token in review[temp[0]]:
+                    if token in cnt_trust_true:
+                        cnt_trust_true[token] += 1
+                    else:
+                        cnt_trust_true[token] = 1
                 tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
-                b_truthful += review[temp[0]]
+                b_truthful |= set(review[temp[0]])
                 truthful.write(temp[0] + ' ' + tmp_str)
 
             if temp[2] == 'negative':
                 sentiment[temp[0]] = False
                 sentiment_bool[False].append(temp[0])
-                count_words(review[temp[0]], cnt_senti_false)
+                # count_words(review[temp[0]], cnt_senti_false)
+                for token in review[temp[0]]:
+                    if token in cnt_senti_false:
+                        cnt_senti_false[token] += 1
+                    else:
+                        cnt_senti_false[token] = 1
                 tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
-                b_negative += review[temp[0]]
+                b_negative |= set(review[temp[0]])
                 negative.write(temp[0] + ' ' + tmp_str)
             elif temp[2] == 'positive':
                 sentiment[temp[0]] = True
                 sentiment_bool[True].append(temp[0])
-                count_words(review[temp[0]], cnt_senti_true)
+                # count_words(review[temp[0]], cnt_senti_true)
+                for token in review[temp[0]]:
+                    if token in cnt_senti_true:
+                        cnt_senti_true[token] += 1
+                    else:
+                        cnt_senti_true[token] = 1
                 tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
-                b_positive += review[temp[0]]
+                b_positive |= set(review[temp[0]])
                 positive.write(temp[0] + ' ' + tmp_str)
         # @to remove
         else:
@@ -198,18 +231,19 @@ def read_file(nm_train_text, nm_train_label):
             # @to remove
 
     # tmp_str = ' '.join(map(str, b_deceptive)) + '\n'
-    blob_list['deceptive'] = b_deceptive
+    blob_list['deceptive'] = list(b_deceptive)
     # tmp_str = ' '.join(map(str, b_truthful)) + '\n'
-    blob_list['truthful'] = b_truthful
+    blob_list['truthful'] = list(b_truthful)
     # tmp_str = ' '.join(map(str, b_negative)) + '\n'
-    blob_list['negative'] = b_negative
+    blob_list['negative'] = list(b_negative)
     # tmp_str = ' '.join(map(str, b_truthful)) + '\n'
-    blob_list['positive'] = b_truthful
+    blob_list['positive'] = list(b_positive)
     for k, blob in blob_list.iteritems():
         scores = {word: tfidf(word, blob, blob_list, k) for word in blob}
+        tf_idf_review[k] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
 
-# tf_idf_review[k] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    # tf_idf_review[k] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 #         print k
 #         for word, score in tf_idf_review[k][:3]:
 #             print("\tWord: {}, TF-IDF: {}".format(word, round(score, 5)))
