@@ -104,20 +104,31 @@ def split_test(a_size):
 
 
 def tokenize(a_review):
-    tmp0 = a_review.replace("'", "")
-    tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp0)
-    tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
-    tmp3 = re.sub(r'([a-zA-Z])([^a-zA-Z., ])', r'\1 \2', re.sub(r'([^a-zA-Z., ])([a-zA-Z])', r'\1 \2', tmp2))
-    tmp4 = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', tmp3))
-    tmp5 = re.sub('\s\s+', ' ', tmp4)
-    lst_token = map(str.lower, tmp5.split(' '))
-    #    item_list = [e for e in lst_token if e not in listOfStopWords]
-    #    for token in item_list:
-    #        if token in cnt_all_words:
-    #            cnt_all_words[token] += 1
-    #        else:
-    #            cnt_all_words[token] = 1
-    #    return item_list
+    # tmp0 = a_review.replace("'", "")
+    # tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp0)
+    # tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
+    # tmp3 = re.sub(r'([a-zA-Z])([^a-zA-Z., ])', r'\1 \2', re.sub(r'([^a-zA-Z., ])([a-zA-Z])', r'\1 \2', tmp2))
+    # tmp4 = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', tmp3))
+    # tmp5 = re.sub('\s\s+', ' ', tmp4)
+    # lst_token = map(str.lower, tmp5.split(' '))
+
+    # tmp0 = a_review.replace("'", "")
+    tmp = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', a_review))
+    tmp1 = re.sub(r'([a-zA-Z])([^a-zA-Z., ])', r'\1 \2', re.sub(r'([^a-zA-Z., ])([a-zA-Z])', r'\1 \2', tmp))
+    tmp2 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp1)
+    tmp3 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp2)
+    tmp4 = re.sub('\s\s+', ' ', tmp3)
+    lst_token = map(str.lower, tmp4.split(' '))
+
+    # lst_token = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', a_review)).split(' ')
+
+    # item_list = [e for e in lst_token if e not in listOfStopWords]
+    # for token in item_list:
+    #     if token in cnt_all_words:
+    #         cnt_all_words[token] += 1
+    #     else:
+    #         cnt_all_words[token] = 1
+    # return item_list
 
     from Stemmer_new import Stemmer
     a_stemmer = Stemmer()
@@ -278,21 +289,21 @@ def read_file(nm_train_text, nm_train_label):
     blob_list['negative'] = list(b_negative)
     blob_list['positive'] = list(b_positive)
 
-    for k, blob in blob_list.iteritems():
-        scores = {word: tfidf(word, blob, blob_list, k) for word in blob}
-        tf_idf_review[k] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
-        for word, score in tf_idf_review[k][:2000]:
-            word_list.append(word)
-        final_words = set(word_list)
+    # for k, blob in blob_list.iteritems():
+    #     scores = {word: tfidf(word, blob, blob_list, k) for word in blob}
+    #     tf_idf_review[k] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    #
+    #     for word, score in tf_idf_review[k][:2000]:
+    #         word_list.append(word)
+    #     final_words = set(word_list)
     # remove_final_words()
 
 
 def write_conditional(f, given, a_dict):
     total = float(sum(a_dict.values(), 0.0))
-    debug.write('Total = ' + str(total) + '\n')
+    debug.write('Total = ' + given + ' ' + str(total) + '\n')
     alpha = len(cnt_all_words.keys())
-    # cond_prob = {k: math.log10(v / total) for k, v in a_dict.iteritems()}
+
     # laplace smoothing
     cond_prob = {k: math.log10((v + 1.0) / (1.0 * (total + alpha))) for k, v in a_dict.iteritems()}
     # cond_prob = {k: math.log10((v) / (1.0 * (total))) for k, v in a_dict.iteritems()}
@@ -306,6 +317,7 @@ def write_conditional(f, given, a_dict):
         else:
             f.write(cond_str + str(cond_prob[key]))
             debug.write(cond_str + str(cond_prob[key]))
+        # count += 1
 
 
 def main():
@@ -326,6 +338,11 @@ def main():
     p_deceptive = math.log10(1 - p_true)
     p_positive = math.log10(tot_senti_true / (tot_review * 1.0))
     p_negative = math.log10(1 - p_positive)
+
+    # p_true = (tot_trust_true / (tot_review * 1.0))
+    # p_deceptive = (1 - p_true)
+    # p_positive = (tot_senti_true / (tot_review * 1.0))
+    # p_negative = (1 - p_positive)
 
 
     model.write('truthful= ' + str(p_true) + '\n')

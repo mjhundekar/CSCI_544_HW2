@@ -63,20 +63,31 @@ listOfStopWords = ["", "-", "!", ",", ".", ":",
 
 
 def tokenize(a_review):
-    tmp0 = a_review.replace("'", "")
-    tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp0)
-    tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
-    tmp3 = re.sub(r'([a-zA-Z])([^a-zA-Z., ])', r'\1 \2', re.sub(r'([^a-zA-Z., ])([a-zA-Z])', r'\1 \2', tmp2))
-    tmp4 = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', tmp3))
-    tmp5 = re.sub('\s\s+', ' ', tmp4)
-    lst_token = map(str.lower, tmp5.split(' '))
-    #    item_list = [e for e in lst_token if e not in listOfStopWords]
-    #    for token in item_list:
-    #        if token in cnt_all_words:
-    #            cnt_all_words[token] += 1
-    #        else:
-    #            cnt_all_words[token] = 1
-    #    return item_list
+    # tmp0 = a_review.replace("'", "")
+    # tmp1 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp0)
+    # tmp2 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp1)
+    # tmp3 = re.sub(r'([a-zA-Z])([^a-zA-Z., ])', r'\1 \2', re.sub(r'([^a-zA-Z., ])([a-zA-Z])', r'\1 \2', tmp2))
+    # tmp4 = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', tmp3))
+    # tmp5 = re.sub('\s\s+', ' ', tmp4)
+    # lst_token = map(str.lower, tmp5.split(' '))
+
+    # tmp0 = a_review.replace("'", "")
+    tmp = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', a_review))
+    tmp1 = re.sub(r'([a-zA-Z])([^a-zA-Z., ])', r'\1 \2', re.sub(r'([^a-zA-Z., ])([a-zA-Z])', r'\1 \2', tmp))
+    tmp2 = re.sub(r'([a-zA-Z])([^\w\s]+)', r'\1 \2', tmp1)
+    tmp3 = re.sub(r'([^\w\s]+)([a-zA-Z])', r'\1 \2', tmp2)
+    tmp4 = re.sub('\s\s+', ' ', tmp3)
+    lst_token = map(str.lower, tmp4.split(' '))
+
+    # lst_token = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', a_review)).split(' ')
+
+    # item_list = [e for e in lst_token if e not in listOfStopWords]
+    # for token in item_list:
+    #     if token in test_cnt_all_words:
+    #         test_cnt_all_words[token] += 1.0
+    #     else:
+    #         test_cnt_all_words[token] = 1.0
+    # return item_list
 
     from Stemmer_new import Stemmer
     a_stemmer = Stemmer()
@@ -153,8 +164,9 @@ def read_model():
 
 def compute_probability(a_id, a_review, which_dict):
     prob = float(0.0)
-    a_class_dict = {}
     # prob = 1.0
+    a_class_dict = {}
+
     # a_review_dict = test_review[a_id]
     # dbg.write(str(a_review_dict) + '\n')
     if which_dict == 'truthful':
@@ -171,8 +183,9 @@ def compute_probability(a_id, a_review, which_dict):
         if key in a_class_dict:
             temp = a_class_dict[key]
             prob += (a_class_dict[key] * 1.0)
+            # prob *= (a_class_dict[key] * 1.0)
             # dbg.write(a_id + ' ' + key + ' ' + str(cnt_key) + ' ' + str(a_class_dict[key]) + '\n')
-            dbg.write(a_id + ' ' + key + ' ' + str(a_class_dict[key]) + '\n')
+            dbg.write(a_id + ' ' + which_dict + ' ' + key + ' ' + str(a_class_dict[key]) + '\n')
             # prob *= (math.pow(int(a_class_dict[key]), cnt_key))
             # print a_class_dict[key]
         else:
@@ -184,16 +197,18 @@ def classify_sentiment(a_id, a_review):
     # positive
     prior_positive = prior['positive']
     rev_cond_positive = compute_probability(a_id, a_review, 'positive')
+    # positive_score = prior_positive * rev_cond_positive
     positive_score = prior_positive + rev_cond_positive
     dbg.write('Final POSITIVE PROB = ' + str(positive_score) + '\n')
-    # positive_score = prior_positive * rev_cond_positive
+
     # negative
     prior_negative = prior['negative']
     rev_cond_negative = compute_probability(a_id, a_review, 'negative')
+    # negative_score = prior_negative * rev_cond_negative
     negative_score = prior_negative + rev_cond_negative
     dbg.write('Final NEGATIVE PROB = ' + str(negative_score) + '\n')
-    # negative_score = prior_negative * rev_cond_negative
-    if positive_score >= negative_score:
+
+    if positive_score > negative_score:
         return 'positive'
     else:
         return 'negative'
@@ -204,16 +219,18 @@ def classify_trust(a_id, a_review):
     # truthful
     prior_truthful = prior['truthful']
     rev_cond_truthful = compute_probability(a_id, a_review, 'truthful')
+    # truthful_score = prior_truthful * rev_cond_truthful
     truthful_score = prior_truthful + rev_cond_truthful
     dbg.write('Final TRUTHFUL PROB = ' + str(truthful_score) + '\n')
-    # truthful_score = prior_truthful * rev_cond_truthful
+
     # deceptive
     prior_deceptive = prior['deceptive']
     rev_cond_deceptive = compute_probability(a_id, a_review, 'deceptive')
+    # deceptive_score = prior_deceptive * rev_cond_deceptive
     deceptive_score = prior_deceptive + rev_cond_deceptive
     dbg.write('Final DECEPTIVE PROB = ' + str(deceptive_score) + '\n')
-    # deceptive_score = prior_deceptive * rev_cond_deceptive
-    if truthful_score >= deceptive_score:
+
+    if truthful_score > deceptive_score:
         return 'truthful'
     else:
         return 'deceptive'
@@ -330,9 +347,10 @@ def main():
         else:
             pred_senti[key] = True
         if cnt < len(test_review.keys()):
-            nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment + '\n')
+            nboutput.write('%s %s %s\n' % (key, str_trust, str_sentiment))
+            # nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment + '\n')
         else:
-            nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment)
+            nboutput.write('%s %s %s' % (key, str_trust, str_sentiment))
         cnt += 1
     nboutput.close()
     # compute_metric()
