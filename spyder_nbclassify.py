@@ -29,7 +29,7 @@ listOfStopWords = ["", "-", "!", ",", ".", ":",
                    "be", "but", "by",
                    "can",
                    "did", "do"
-                   "etc",
+                          "etc",
                    "find", "for", "from",
                    "get", "go",
                    "have", "had", "he", "her", "him", "how",
@@ -70,12 +70,12 @@ def tokenize(a_review):
     tmp4 = re.sub('[-!,.:]', ' ', re.sub('[^a-zA-Z0-9-!,.: ]', '', tmp3))
     tmp5 = re.sub('\s\s+', ' ', tmp4)
     lst_token = map(str.lower, tmp5.split(' '))
-    #    item_list = [e for e in lst_token if e not in listOfStopWords]
+    item_list = [e for e in lst_token if e not in listOfStopWords]
     #    for token in item_list:
-    #        if token in cnt_all_words:
-    #            cnt_all_words[token] += 1
+    #        if token in test_cnt_all_words:
+    #            test_cnt_all_words[token] += 1
     #        else:
-    #            cnt_all_words[token] = 1
+    #            test_cnt_all_words[token] = 1
     #    return item_list
 
     from Stemmer_new import Stemmer
@@ -126,7 +126,6 @@ def read_model():
             count += 1
             continue
         if count > 4:
-            count += 1
             curr_cond = curr[0].split('|')
             key = curr_cond[0].strip()
             which_dict = curr_cond[1][:-1].strip()
@@ -147,8 +146,6 @@ def read_model():
                 cond_negative[key] = float(curr[1].strip()) * 1.0
                 # print which_dict
                 continue
-
-    print 'TOTAL LINES READ :: ' + str(count) + '\n'
 
 
 def compute_probability(a_id, a_review, which_dict):
@@ -172,11 +169,12 @@ def compute_probability(a_id, a_review, which_dict):
             temp = a_class_dict[key]
             prob += (a_class_dict[key] * 1.0)
             # dbg.write(a_id + ' ' + key + ' ' + str(cnt_key) + ' ' + str(a_class_dict[key]) + '\n')
-            dbg.write(a_id + ' ' + key + ' ' + str(a_class_dict[key]) + '\n')
+            dbg.write(a_id + ' ' + which_dict +' ' + key + ' ' + str(a_class_dict[key]) + '\n')
             # prob *= (math.pow(int(a_class_dict[key]), cnt_key))
             # print a_class_dict[key]
         else:
-            dbg.write('NOT FOUND ' + key + '\n')
+            dbg.write('---------------NOT FOUND in ' + which_dict + ' ' + key + '\n')
+#            print ('NOT FOUND in ' + which_dict + ' ' + key + '\n')
     return prob
 
 
@@ -304,13 +302,13 @@ def compute_metric():
 
 
 def main():
-    nm_test_text = sys.argv[1]
-    # nm_test_text = 'test_data.txt'
+    # nm_test_text = sys.argv[1]
+    nm_test_text = 'test_data.txt'
     global test_review
 
     read_model()
     read_test(nm_test_text)
-    # read_output_labels()
+    read_output_labels()
     # read_test_remove(nm_test_text)
     nboutput = open('nboutput.txt', 'w')
     cnt = 1
@@ -322,13 +320,21 @@ def main():
 
         if str_trust == 'deceptive':
             pred_trust[key] = False
+
         else:
             pred_trust[key] = True
+
+        if pred_trust[key] != true_trust[key]:
+            print '\nIncorrect Trust: ' + str(pred_trust[key]) + ' ' + key
+            dbg.write('\nIncorrect Trust: ' + str(pred_trust[key]) + ' ' + key)
 
         if str_sentiment == 'negative':
             pred_senti[key] = False
         else:
             pred_senti[key] = True
+        if pred_senti[key] != true_senti[key]:
+            print '\nIncorrect Senti: ' + str(pred_senti[key]) + ' ' + key
+            dbg.write('\nIncorrect Senti: ' + str(pred_senti[key]) + ' ' + key)
         if cnt < len(test_review.keys()):
             nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment + '\n')
         else:
