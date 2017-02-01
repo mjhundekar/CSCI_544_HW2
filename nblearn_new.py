@@ -3,10 +3,6 @@ import random
 import json
 import re
 import sys
-# from decimal import *
-# import PorterStemmer
-import Stemmer_new
-import collections
 
 listOfStopWords = ["", "-", "!", ",", ".", ":",
                    "a", "able", "about", "all", "also", "am", "an", "and", "any", "as", "are", "at",
@@ -213,7 +209,7 @@ def write_final_model():
         else:
             cond_all_prob[word]['negative'] = 1.0 / (alpha + (sum(cnt_senti_false.values()) * 1.0))
     final_model['conditional'] = cond_all_prob
-    with open('nbmodel_json.txt', 'w') as fp:
+    with open('nbmodel.txt', 'w') as fp:
         json.dump(final_model, fp, indent=4)
 
 
@@ -251,27 +247,29 @@ def read_file(nm_train_text, nm_train_label):
     init_cond_all()
 
     ln_train_label = fl_train_label.readlines()
-    # train_label = {}
+
     # @to remove
-    positive = open('positive.txt', 'w')
-    negative = open('negative.txt', 'w')
-    deceptive = open('deceptive.txt', 'w')
-    truthful = open('truthful.txt', 'w')
-    test_positive = open('test_positive.txt', 'w')
-    test_negative = open('test_negative.txt', 'w')
-    test_deceptive = open('test_deceptive.txt', 'w')
-    test_truthful = open('test_truthful.txt', 'w')
-    b_positive = set()
-    b_negative = set()
-    b_deceptive = set()
-    b_truthful = set()
+    # positive = open('positive.txt', 'w')
+    # negative = open('negative.txt', 'w')
+    # deceptive = open('deceptive.txt', 'w')
+    # truthful = open('truthful.txt', 'w')
+    # test_positive = open('test_positive.txt', 'w')
+    # test_negative = open('test_negative.txt', 'w')
+    # test_deceptive = open('test_deceptive.txt', 'w')
+    # test_truthful = open('test_truthful.txt', 'w')
+    # b_positive = set()
+    # b_negative = set()
+    # b_deceptive = set()
+    # b_truthful = set()
     # @to remove
+
     for line in ln_train_label:
         temp = line.strip().split(' ')
         if temp[0] in review:
             if temp[1].strip() == 'deceptive':
                 trust[temp[0]] = False
                 trust_bool[False].append(temp[0])
+
                 for token in review[temp[0]]:
                     cond_all[token]['deceptive'] += 1
                     if token in cnt_trust_false:
@@ -279,13 +277,14 @@ def read_file(nm_train_text, nm_train_label):
                     else:
                         cnt_trust_false[token] = 1
 
-                tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
-                b_deceptive |= set(review[temp[0]])
-                deceptive.write(temp[0] + ' ' + tmp_str)
+                # tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
+                # b_deceptive |= set(review[temp[0]])
+                # deceptive.write(temp[0] + ' ' + tmp_str)
 
             elif temp[1].strip() == 'truthful':
                 trust[temp[0]] = True
                 trust_bool[True].append(temp[0])
+
                 for token in review[temp[0]]:
                     cond_all[token]['truthful'] += 1
                     if token in cnt_trust_true:
@@ -293,13 +292,14 @@ def read_file(nm_train_text, nm_train_label):
                     else:
                         cnt_trust_true[token] = 1
 
-                tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
-                b_truthful |= set(review[temp[0]])
-                truthful.write(temp[0] + ' ' + tmp_str)
+                # tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
+                # b_truthful |= set(review[temp[0]])
+                # truthful.write(temp[0] + ' ' + tmp_str)
 
             if temp[2].strip() == 'negative':
                 sentiment[temp[0]] = False
                 sentiment_bool[False].append(temp[0])
+
                 for token in review[temp[0]]:
                     cond_all[token]['negative'] += 1
                     if token in cnt_senti_false:
@@ -307,9 +307,9 @@ def read_file(nm_train_text, nm_train_label):
                     else:
                         cnt_senti_false[token] = 1
 
-                tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
-                b_negative |= set(review[temp[0]])
-                negative.write(temp[0] + ' ' + tmp_str)
+                # tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
+                # b_negative |= set(review[temp[0]])
+                # negative.write(temp[0] + ' ' + tmp_str)
 
             elif temp[2].strip() == 'positive':
                 sentiment[temp[0]] = True
@@ -322,9 +322,9 @@ def read_file(nm_train_text, nm_train_label):
                     else:
                         cnt_senti_true[token] = 1
 
-                tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
-                b_positive |= set(review[temp[0]])
-                positive.write(temp[0] + ' ' + tmp_str)
+                # tmp_str = ' '.join(map(str, review[temp[0]])) + '\n'
+                # b_positive |= set(review[temp[0]])
+                # positive.write(temp[0] + ' ' + tmp_str)
 
         # @to remove
         # else:
@@ -340,10 +340,10 @@ def read_file(nm_train_text, nm_train_label):
         #         test_positive.write(temp[0] + ' ' + tmp_str)
 
 
-    blob_list['deceptive'] = list(b_deceptive)
-    blob_list['truthful'] = list(b_truthful)
-    blob_list['negative'] = list(b_negative)
-    blob_list['positive'] = list(b_positive)
+    # blob_list['deceptive'] = list(b_deceptive)
+    # blob_list['truthful'] = list(b_truthful)
+    # blob_list['negative'] = list(b_negative)
+    # blob_list['positive'] = list(b_positive)
 
     # for k, blob in blob_list.iteritems():
     #     scores = {word: tfidf(word, blob, blob_list, k) for word in blob}
@@ -355,24 +355,24 @@ def read_file(nm_train_text, nm_train_label):
     # remove_final_words()
 
 
-def write_conditional(f, given, a_dict):
-    total = float(sum(a_dict.values(), 0.0))
-    debug.write('Total = ' + given + ' ' + str(total) + '\n')
-    alpha = len(cnt_all_words.keys())
-
-    # laplace smoothing
-    cond_prob = {k: math.log10((v + 1.0) / (1.0 * (total + alpha))) for k, v in a_dict.iteritems()}
-    # cond_prob = {k: math.log10((v) / (1.0 * (total))) for k, v in a_dict.iteritems()}
-    # cond_prob = {k: ((v) / (total)) for k, v in a_dict.iteritems()}
-    count = 1
-    for key in cond_prob:
-        cond_str = key + given + '= '
-        if count < len(cond_prob.keys()):
-            f.write(cond_str + str(cond_prob[key]) + '\n')
-            debug.write(cond_str + str(cond_prob[key]) + '\n')
-        else:
-            f.write(cond_str + str(cond_prob[key]))
-            debug.write(cond_str + str(cond_prob[key]))
+# def write_conditional(f, given, a_dict):
+#     total = float(sum(a_dict.values(), 0.0))
+#     debug.write('Total = ' + given + ' ' + str(total) + '\n')
+#     alpha = len(cnt_all_words.keys())
+#
+#     # laplace smoothing
+#     cond_prob = {k: math.log10((v + 1.0) / (1.0 * (total + alpha))) for k, v in a_dict.iteritems()}
+#     # cond_prob = {k: math.log10((v) / (1.0 * (total))) for k, v in a_dict.iteritems()}
+#     # cond_prob = {k: ((v) / (total)) for k, v in a_dict.iteritems()}
+#     count = 1
+#     for key in cond_prob:
+#         cond_str = key + given + '= '
+#         if count < len(cond_prob.keys()):
+#             f.write(cond_str + str(cond_prob[key]) + '\n')
+#             debug.write(cond_str + str(cond_prob[key]) + '\n')
+#         else:
+#             f.write(cond_str + str(cond_prob[key]))
+#             debug.write(cond_str + str(cond_prob[key]))
         # count += 1
 
 
@@ -405,22 +405,22 @@ def main():
     priors['positive'] = p_positive
     priors['negative'] = p_negative
 
-    model.write('truthful= ' + str(p_true) + '\n')
-
-    model.write('deceptive= ' + str(p_deceptive) + '\n')
-
-    model.write('positive= ' + str(p_positive) + '\n')
-
-    model.write('negative= ' + str(p_negative) + '\n')
-
-    debug.write('Writing truthful\n')
-    write_conditional(model, '|truthful', cnt_trust_true)
-    debug.write('Writing deceptive\n')
-    write_conditional(model, '|deceptive', cnt_trust_false)
-    debug.write('Writing positive\n')
-    write_conditional(model, '|positive', cnt_senti_true)
-    debug.write('Writing negative\n')
-    write_conditional(model, '|negative', cnt_senti_false)
+    # model.write('truthful= ' + str(p_true) + '\n')
+    #
+    # model.write('deceptive= ' + str(p_deceptive) + '\n')
+    #
+    # model.write('positive= ' + str(p_positive) + '\n')
+    #
+    # model.write('negative= ' + str(p_negative) + '\n')
+    #
+    # debug.write('Writing truthful\n')
+    # write_conditional(model, '|truthful', cnt_trust_true)
+    # debug.write('Writing deceptive\n')
+    # write_conditional(model, '|deceptive', cnt_trust_false)
+    # debug.write('Writing positive\n')
+    # write_conditional(model, '|positive', cnt_senti_true)
+    # debug.write('Writing negative\n')
+    # write_conditional(model, '|negative', cnt_senti_false)
     write_final_model()
     print '\ncnt_all_words', str(len(cnt_all_words.keys()))
     print '\nSum', str(sum(cnt_all_words.values()))
@@ -438,7 +438,7 @@ def main():
     print '\nSum', str(sum(cnt_trust_true.values()))
 
 
-# python nblearn.py train-text.txt train-labels.txt
+# python nblearn_new.py train-text.txt train-labels.txt
 if __name__ == '__main__':
     #   python hw3cs561s16.py -i sample01.txt
     main()

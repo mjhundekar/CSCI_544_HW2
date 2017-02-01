@@ -5,7 +5,7 @@ import math
 import collections
 
 # from decimal import *
-prior = {}
+priors = {}
 cond_truthful = {}
 cond_deceptive = {}
 cond_positive = {}
@@ -18,6 +18,8 @@ true_trust = {}
 true_senti = {}
 pred_trust = {}
 pred_senti = {}
+cond_all_prob = {}
+
 precision = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
 recall = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
 f1 = {'deceptive': 0, 'truthful': 0, 'positive': 0, 'negative': 0}
@@ -29,7 +31,7 @@ listOfStopWords = ["", "-", "!", ",", ".", ":",
                    "be", "but", "by",
                    "can",
                    "did", "do"
-                   "etc",
+                          "etc",
                    "find", "for", "from",
                    "get", "go",
                    "have", "had", "he", "her", "him", "how",
@@ -115,53 +117,62 @@ def read_test(nm_test_text):
 
 
 def read_model():
-    f = open('nbmodel.txt', 'r')
-    lines = f.readlines()
-    count = 1
-    for line in lines:
-        curr = line.strip().split(' ')
-        if count == 1:
-            prior['truthful'] = float(curr[1].strip()) * 1.0
-            count += 1
-            continue
-        if count == 2:
-            prior['deceptive'] = float(curr[1].strip()) * 1.0
-            count += 1
-            continue
-        if count == 3:
-            prior['positive'] = float(curr[1].strip()) * 1.0
-            count += 1
-            continue
-        if count == 4:
-            prior['negative'] = float(curr[1].strip()) * 1.0
-            count += 1
-            continue
-        if count > 4:
-            count += 1
-            curr_cond = curr[0].split('|')
-            key = curr_cond[0].strip()
-            which_dict = curr_cond[1][:-1].strip()
-            # print which_dict
-            if which_dict == 'truthful':
-                cond_truthful[key] = float(curr[1].strip()) * 1.0
-                # print which_dict
-                continue
-            if which_dict == 'deceptive':
-                cond_deceptive[key] = float(curr[1].strip()) * 1.0
-                # print which_dict
-                continue
-            if which_dict == 'positive':
-                cond_positive[key] = float(curr[1].strip()) * 1.0
-                # print which_dict
-                continue
-            if which_dict == 'negative':
-                cond_negative[key] = float(curr[1].strip()) * 1.0
-                # print which_dict
-                continue
-            else:
-                print 'INCORRECT DICTONARY %s\n' % which_dict
+    global priors
+    global cond_all_prob
+    with open('nbmodel.txt', 'r') as fp:
+        data = json.load(fp)
+    priors = data['priors']
+    cond_all_prob = data['conditional']
 
-    print 'TOTAL LINES READ :: ' + str(count) + '\n'
+
+# def read_model():
+#     f = open('nbmodel.txt', 'r')
+#     lines = f.readlines()
+#     count = 1
+#     for line in lines:
+#         curr = line.strip().split(' ')
+#         if count == 1:
+#             prior['truthful'] = float(curr[1].strip()) * 1.0
+#             count += 1
+#             continue
+#         if count == 2:
+#             prior['deceptive'] = float(curr[1].strip()) * 1.0
+#             count += 1
+#             continue
+#         if count == 3:
+#             prior['positive'] = float(curr[1].strip()) * 1.0
+#             count += 1
+#             continue
+#         if count == 4:
+#             prior['negative'] = float(curr[1].strip()) * 1.0
+#             count += 1
+#             continue
+#         if count > 4:
+#             count += 1
+#             curr_cond = curr[0].split('|')
+#             key = curr_cond[0].strip()
+#             which_dict = curr_cond[1][:-1].strip()
+#             # print which_dict
+#             if which_dict == 'truthful':
+#                 cond_truthful[key] = float(curr[1].strip()) * 1.0
+#                 # print which_dict
+#                 continue
+#             if which_dict == 'deceptive':
+#                 cond_deceptive[key] = float(curr[1].strip()) * 1.0
+#                 # print which_dict
+#                 continue
+#             if which_dict == 'positive':
+#                 cond_positive[key] = float(curr[1].strip()) * 1.0
+#                 # print which_dict
+#                 continue
+#             if which_dict == 'negative':
+#                 cond_negative[key] = float(curr[1].strip()) * 1.0
+#                 # print which_dict
+#                 continue
+#             else:
+#                 print 'INCORRECT DICTONARY %s\n' % which_dict
+#
+#     print 'TOTAL LINES READ :: ' + str(count) + '\n'
 
 
 def compute_probability(a_id, a_review, which_dict):
@@ -195,48 +206,48 @@ def compute_probability(a_id, a_review, which_dict):
     return prob
 
 
-def classify_sentiment(a_id, a_review):
-    # positive
-    prior_positive = prior['positive']
-    rev_cond_positive = compute_probability(a_id, a_review, 'positive')
-    # positive_score = prior_positive * rev_cond_positive
-    positive_score = prior_positive + rev_cond_positive
-    dbg.write('Final POSITIVE PROB = ' + str(positive_score) + '\n')
+# def classify_sentiment(a_id, a_review):
+#     # positive
+#     prior_positive = prior['positive']
+#     rev_cond_positive = compute_probability(a_id, a_review, 'positive')
+#     # positive_score = prior_positive * rev_cond_positive
+#     positive_score = prior_positive + rev_cond_positive
+#     dbg.write('Final POSITIVE PROB = ' + str(positive_score) + '\n')
+#
+#     # negative
+#     prior_negative = prior['negative']
+#     rev_cond_negative = compute_probability(a_id, a_review, 'negative')
+#     # negative_score = prior_negative * rev_cond_negative
+#     negative_score = prior_negative + rev_cond_negative
+#     dbg.write('Final NEGATIVE PROB = ' + str(negative_score) + '\n')
+#
+#     if positive_score > negative_score:
+#         return 'positive'
+#     else:
+#         return 'negative'
+#         # return ''
 
-    # negative
-    prior_negative = prior['negative']
-    rev_cond_negative = compute_probability(a_id, a_review, 'negative')
-    # negative_score = prior_negative * rev_cond_negative
-    negative_score = prior_negative + rev_cond_negative
-    dbg.write('Final NEGATIVE PROB = ' + str(negative_score) + '\n')
 
-    if positive_score > negative_score:
-        return 'positive'
-    else:
-        return 'negative'
-        # return ''
-
-
-def classify_trust(a_id, a_review):
-    # truthful
-    prior_truthful = prior['truthful']
-    rev_cond_truthful = compute_probability(a_id, a_review, 'truthful')
-    # truthful_score = prior_truthful * rev_cond_truthful
-    truthful_score = prior_truthful + rev_cond_truthful
-    dbg.write('Final TRUTHFUL PROB = ' + str(truthful_score) + '\n')
-
-    # deceptive
-    prior_deceptive = prior['deceptive']
-    rev_cond_deceptive = compute_probability(a_id, a_review, 'deceptive')
-    # deceptive_score = prior_deceptive * rev_cond_deceptive
-    deceptive_score = prior_deceptive + rev_cond_deceptive
-    dbg.write('Final DECEPTIVE PROB = ' + str(deceptive_score) + '\n')
-
-    if truthful_score > deceptive_score:
-        return 'truthful'
-    else:
-        return 'deceptive'
-        # return ''
+# def classify_trust(a_id, a_review):
+#     # truthful
+#     prior_truthful = prior['truthful']
+#     rev_cond_truthful = compute_probability(a_id, a_review, 'truthful')
+#     # truthful_score = prior_truthful * rev_cond_truthful
+#     truthful_score = prior_truthful + rev_cond_truthful
+#     dbg.write('Final TRUTHFUL PROB = ' + str(truthful_score) + '\n')
+#
+#     # deceptive
+#     prior_deceptive = prior['deceptive']
+#     rev_cond_deceptive = compute_probability(a_id, a_review, 'deceptive')
+#     # deceptive_score = prior_deceptive * rev_cond_deceptive
+#     deceptive_score = prior_deceptive + rev_cond_deceptive
+#     dbg.write('Final DECEPTIVE PROB = ' + str(deceptive_score) + '\n')
+#
+#     if truthful_score > deceptive_score:
+#         return 'truthful'
+#     else:
+#         return 'deceptive'
+# return ''
 
 
 def read_output_labels():
@@ -322,10 +333,18 @@ def compute_metric():
     print f1
 
 
+final_class = {}
+final_score = {}
+
+
 def main():
     nm_test_text = sys.argv[1]
     # nm_test_text = 'test_data.txt'
     global test_review
+    global priors
+    global cond_all_prob
+    global final_class
+    global final_score
 
     read_model()
     read_test(nm_test_text)
@@ -333,31 +352,68 @@ def main():
     # read_test_remove(nm_test_text)
     nboutput = open('nboutput.txt', 'w')
     cnt = 1
-    for key in test_review.keys():
-        dbg.write('TRUST\n')
-        str_trust = classify_trust(key, test_review[key])
-        dbg.write('SENTI\n')
-        str_sentiment = classify_sentiment(key, test_review[key])
+    for key in test_review:
+        final_class[key] = []
+        final_score[key] = {}
+        log_truthful = 0.0
+        log_deceptive = 0.0
+        log_positive = 0.0
+        log_negative = 0.0
+        a_review = test_review[key]
+        for word in a_review:
+            if word in cond_all_prob:
+                log_truthful += math.log(cond_all_prob[word]['truthful'])
+                log_deceptive += math.log(cond_all_prob[word]['deceptive'])
+                log_positive += math.log(cond_all_prob[word]['positive'])
+                log_negative += math.log(cond_all_prob[word]['negative'])
 
-        if str_trust == 'deceptive':
-            pred_trust[key] = False
+        log_truthful += math.log(priors['truthful'])
+        log_deceptive += math.log(priors['deceptive'])
+        log_positive += math.log(priors['positive'])
+        log_negative += math.log(priors['negative'])
+
+        final_score[key]['truthful'] = log_truthful
+        final_score[key]['deceptive'] = log_deceptive
+        final_score[key]['positive'] = log_positive
+        final_score[key]['negative'] = log_negative
+
+        if log_truthful > log_deceptive:
+            str_trust = 'truthful'
         else:
-            pred_trust[key] = True
-
-        if str_sentiment == 'negative':
-            pred_senti[key] = False
+            str_trust = 'deceptive'
+        final_class[key].append(str_trust)
+        if log_positive > log_negative:
+            str_senti = 'positive'
         else:
-            pred_senti[key] = True
-        if cnt < len(test_review.keys()):
-            nboutput.write('%s %s %s\n' % (key, str_trust, str_sentiment))
-            # nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment + '\n')
-        else:
-            nboutput.write('%s %s %s' % (key, str_trust, str_sentiment))
-        cnt += 1
-    nboutput.close()
-    # compute_metric()
+            str_senti = 'negative'
+        final_class[key].append(str_senti)
+
+        nboutput.write('%s %s %s\n' % (key, str_trust, str_senti))
+
+        #     dbg.write('TRUST\n')
+        #     str_trust = classify_trust(key, test_review[key])
+        #     dbg.write('SENTI\n')
+        #     str_sentiment = classify_sentiment(key, test_review[key])
+        #
+        #     if str_trust == 'deceptive':
+        #         pred_trust[key] = False
+        #     else:
+        #         pred_trust[key] = True
+        #
+        #     if str_sentiment == 'negative':
+        #         pred_senti[key] = False
+        #     else:
+        #         pred_senti[key] = True
+        #     if cnt < len(test_review.keys()):
+        #         nboutput.write('%s %s %s\n' % (key, str_trust, str_sentiment))
+        #         # nboutput.write(key + ' ' + str_trust + ' ' + str_sentiment + '\n')
+        #     else:
+        #         nboutput.write('%s %s %s' % (key, str_trust, str_sentiment))
+        #     cnt += 1
+        # nboutput.close()
+        # compute_metric()
 
 
-# python nbclassify.py test_data.txt
+# python nbclassify_new.py test_data.txt
 if __name__ == '__main__':
     main()
